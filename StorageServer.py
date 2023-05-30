@@ -37,19 +37,29 @@ class StorageServer:
             except KeyboardInterrupt:
                 running = False
 
+        self.__server_socket.close()
+
     def handle_connection(self, client_socket: socket.socket, client_address: SocketAddress) -> None:
         connection_active = True
 
         while connection_active:
             header_data = client_socket.recv(Header.MAX_SIZE)
 
-            header = Header.decode(header_data)
+            if not header_data:
+                logging.info(f'Host {client_address} disconnected!')
 
-            if header.get_type() == PackageType.HOST_CONNECTED:
-                header = Header(0, PackageType.SUCCESSFUL_CONNECT_RESPONSE, client_address)
+                self.__connected_hosts.remove(client_address)
+            else:
+                header = Header.decode(header_data)
 
-                self.__server_socket.send(header.encode())
+                logging.debug(f'Header from {client_address}: {header}')
 
-                self.__connected_hosts.add(self.__server_socket)
+                if header.get_type() == PackageType.HOST_CONNECTED:
+                    header = Header(0, PackageType.SUCCESSFUL_CONNECT_RESPONSE, client_address,
+                                    self.__server_address)
 
-                logging.info(f'Host {client_address} connected!')
+                    self.__server_socket.send(header.encode())
+
+                    self.__connected_hosts.add(self.__server_socket)
+
+                    logging.info(f'Host {client_address} connected!')
