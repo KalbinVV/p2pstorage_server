@@ -4,7 +4,7 @@ import threading
 
 from p2pstorage_core.helper_classes.SocketAddress import SocketAddress
 from p2pstorage_core.server.Header import Header
-from p2pstorage_core.server.Package import AbstractPackage, PackageType
+from p2pstorage_core.server.Package import PackageType
 
 
 class StorageServer:
@@ -23,16 +23,19 @@ class StorageServer:
         running = True
 
         while running:
-            client_socket, addr = self.__server_socket.accept()
+            try:
+                client_socket, addr = self.__server_socket.accept()
 
-            client_address: SocketAddress = addr
+                client_address: SocketAddress = addr
 
-            logging.info(f'Host {addr} try to connect...')
+                logging.info(f'Host {addr} try to connect...')
 
-            client_thread = threading.Thread(target=self.handle_connection, args=(client_socket,
-                                                                                  client_address))
+                client_thread = threading.Thread(target=self.handle_connection, args=(client_socket,
+                                                                                      client_address))
 
-            client_thread.start()
+                client_thread.start()
+            except KeyboardInterrupt:
+                running = False
 
     def handle_connection(self, client_socket: socket.socket, client_address: SocketAddress) -> None:
         connection_active = True
@@ -43,9 +46,9 @@ class StorageServer:
             header = Header.decode(header_data)
 
             if header.get_type() == PackageType.HOST_CONNECTED:
-                header = Header(0, PackageType.HOST_CONNECTED, client_address)
+                header = Header(0, PackageType.SUCCESSFUL_CONNECT_RESPONSE, client_address)
 
-                self.__server_socket.send()
+                self.__server_socket.send(header.encode())
 
                 self.__connected_hosts.add(self.__server_socket)
 

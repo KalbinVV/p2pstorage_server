@@ -1,5 +1,23 @@
+import logging
+
+from p2pstorage_core.helper_classes.SocketAddress import SocketAddress
+
+from StorageServer import StorageServer
+
+
 def main():
-    pass
+    logging.basicConfig(level=logging.DEBUG)
+
+    server_address: SocketAddress = SocketAddress('localhost', 5000)
+
+    storage_server = StorageServer(server_address)
+
+    logging.info('Server started!')
+
+    storage_server.run()
+
+    logging.info('Server stopped!')
+
 
 if __name__ == '__main__':
     main()
