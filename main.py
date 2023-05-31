@@ -8,7 +8,7 @@ from StorageServer import StorageServer
 def main():
     logging.basicConfig(level=logging.DEBUG)
 
-    server_address: SocketAddress = SocketAddress('localhost', 5000)
+    server_address = SocketAddress('localhost', 5000)
 
     storage_server = StorageServer(server_address)
 
