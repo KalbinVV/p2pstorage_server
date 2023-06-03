@@ -1,12 +1,9 @@
-import json
 import logging
 import socket
 import threading
 
 from p2pstorage_core.helper_classes.SocketAddress import SocketAddress
-from p2pstorage_core.server import StreamConfiguration
-from p2pstorage_core.server.Header import Header
-from p2pstorage_core.server.Package import PackageType, Package
+from p2pstorage_core.server.Package import PackageType, Package, ConnectionResponsePackage
 
 
 class StorageServer:
@@ -35,8 +32,7 @@ class StorageServer:
                 logging.info(f'Host {addr} try to connect...')
 
                 client_thread = threading.Thread(target=self.handle_connection,
-                                                 args=(client_socket, SocketAddress(client_address[0],
-                                                                                    client_address[1])))
+                                                 args=(client_socket,))
 
                 client_thread.start()
             except KeyboardInterrupt:
@@ -44,44 +40,17 @@ class StorageServer:
 
         self.__server_socket.close()
 
-    def handle_connection(self, client_socket: socket.socket, client_address: SocketAddress) -> None:
+    def handle_connection(self, client_socket: socket.socket) -> None:
         connection_active = True
 
         while connection_active and self.__running:
-            header_data = client_socket.recv(StreamConfiguration.HEADER_SIZE)
+            package = Package.recv(client_socket)
 
-            logging.debug(f'Header data from {client_address}: {header_data}')
+            if package.get_type() == PackageType.HOST_CONNECT_REQUEST:
+                logging.info(f'Host {client_socket.getpeername()} connected!')
 
-            if not header_data:
-                logging.info(f'Host {client_address} disconnected!')
+                successful_connect_response = ConnectionResponsePackage()
 
-                if client_address in self.__connected_hosts:
-                    self.__connected_hosts.remove(client_address)
-
-                connection_active = False
-            else:
-                header = Header.decode(header_data)
-
-                logging.debug(f'Header from {client_address}: {header}')
-
-                if header.get_type() == PackageType.HOST_CONNECT_REQUEST:
-                    logging.debug(f'Connecting new host {client_address}...')
-
-                    json_response = json.dumps({'host': client_address.host, 'port': client_address.port})
-
-                    package = Package.from_json(json_response)
-
-                    header = Header.generate_from_bytes(package.get_data(),
-                                                        PackageType.HOST_SUCCESSFUL_CONNECT_RESPONSE,
-                                                        client_address,
-                                                        self.__server_address)
-
-                    client_socket.send(header.encode())
-
-                    client_socket.send(package.get_data())
-
-                    self.__connected_hosts.add(self.__server_socket)
-
-                    logging.info(f'Host {client_address} connected!')
+                successful_connect_response.send(client_socket)
 
         client_socket.close()
