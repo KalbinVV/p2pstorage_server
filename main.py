@@ -16,8 +16,6 @@ def main():
 
     storage_server.run()
 
-    logging.info('Server stopped!')
-
 
 if __name__ == '__main__':
     main()
