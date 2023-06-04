@@ -83,7 +83,7 @@ class StorageServer:
                 disconnect_host()
                 break
 
-            from PackageHandler import handle_package
+            from PackagesHandlers import handle_package
             handle_package(package, host_socket, self)
 
         host_socket.close()
