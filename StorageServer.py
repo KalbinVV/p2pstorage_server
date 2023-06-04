@@ -78,6 +78,8 @@ class StorageServer:
             logging.debug(f'Package from {host_addr}: {package}')
 
             if package.get_type() == PackageType.CONNECTION_LOST:
+                logging.info(f'Host {host_addr} disconnected!')
+
                 if self.is_host_connected(host_addr):
                     self.remove_connected_host(host_addr)
 
