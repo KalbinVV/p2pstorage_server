@@ -61,15 +61,17 @@ class StorageServer:
         connection_active = True
         host_addr = host_socket.getpeername()
 
+        def disconnect_host():
+            logging.info(f'Host {host_addr} disconnected!')
+
+            if self.is_host_connected(host_addr):
+                self.remove_connected_host(host_addr)
+
         while connection_active and self.__running:
             try:
                 package = Package.recv(host_socket)
             except EmptyHeaderException:
-                logging.info(f'Host {host_addr} disconnected!')
-
-                if self.is_host_connected(host_addr):
-                    self.remove_connected_host(host_addr)
-
+                disconnect_host()
                 break
             except InvalidHeaderException:
                 logging.error(f'Invalid header from {host_addr}!')
@@ -78,11 +80,7 @@ class StorageServer:
             logging.debug(f'Package from {host_addr}: {package}')
 
             if package.get_type() == PackageType.CONNECTION_LOST:
-                logging.info(f'Host {host_addr} disconnected!')
-
-                if self.is_host_connected(host_addr):
-                    self.remove_connected_host(host_addr)
-
+                disconnect_host()
                 break
 
             from PackageHandler import handle_package
