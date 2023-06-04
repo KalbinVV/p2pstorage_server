@@ -19,6 +19,15 @@ class StorageServer:
 
         self.__running = False
 
+    def add_connected_host(self, addr: SocketAddress, host_socket: socket.socket) -> None:
+        self.__connected_hosts[addr] = host_socket
+
+    def is_host_connected(self, addr: SocketAddress) -> bool:
+        return addr in self.__connected_hosts
+
+    def remove_connected_host(self, addr: SocketAddress) -> None:
+        del self.__connected_hosts[addr]
+
     def run(self):
         self.__server_socket.listen()
 
@@ -47,28 +56,24 @@ class StorageServer:
 
         self.__server_socket.close()
 
-    def handle_connection(self, client_socket: socket.socket) -> None:
+    def handle_connection(self, host_socket: socket.socket) -> None:
         connection_active = True
-        host_addr = client_socket.getpeername()
+        host_addr = host_socket.getpeername()
 
         while connection_active and self.__running:
             try:
-                package = Package.recv(client_socket)
+                package = Package.recv(host_socket)
             except EmptyHeaderException:
-                logging.info(f'Host {client_socket.getpeername()} disconnected!')
+                logging.info(f'Host {host_addr} disconnected!')
 
-                if host_addr in self.__connected_hosts.keys():
-                    del self.__connected_hosts[host_addr]
+                if self.is_host_connected(host_addr):
+                    self.remove_connected_host(host_addr)
 
                 break
 
-            if package.get_type() == PackageType.HOST_CONNECT_REQUEST:
-                logging.info(f'Host {host_addr} connected!')
+            logging.debug(f'Package from {host_addr}: {package}')
 
-                self.__connected_hosts[host_addr] = client_socket
+            from PackageHandler import handle_package
+            handle_package(package, host_socket, self)
 
-                successful_connect_response = ConnectionResponsePackage()
-
-                successful_connect_response.send(client_socket)
-
-        client_socket.close()
+        host_socket.close()
