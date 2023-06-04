@@ -1,9 +1,10 @@
 import logging
 import socket
 import threading
+from typing import Optional
 
 from p2pstorage_core.helper_classes.SocketAddress import SocketAddress
-from p2pstorage_core.server.Exceptions import EmptyHeaderException
+from p2pstorage_core.server.Exceptions import EmptyHeaderException, InvalidHeaderException
 from p2pstorage_core.server.Package import PackageType, Package, ConnectionResponsePackage, ConnectionLostPackage
 
 
@@ -70,8 +71,17 @@ class StorageServer:
                     self.remove_connected_host(host_addr)
 
                 break
+            except InvalidHeaderException:
+                logging.error(f'Invalid header from {host_addr}!')
+                continue
 
             logging.debug(f'Package from {host_addr}: {package}')
+
+            if package.get_type() == PackageType.CONNECTION_LOST:
+                if self.is_host_connected(host_addr):
+                    self.remove_connected_host(host_addr)
+
+                break
 
             from PackageHandler import handle_package
             handle_package(package, host_socket, self)

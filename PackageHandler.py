@@ -10,6 +10,8 @@ def handle_package(package: Package, host_socket: socket.socket, server: Storage
     match package.get_type():
         case PackageType.HOST_CONNECT_REQUEST:
             host_connect_request(package, host_socket, server)
+        case PackageType.CONNECTION_LOST:
+            pass
 
 
 def host_connect_request(package: Package, host_socket: socket.socket, server: StorageServer) -> None:
@@ -22,3 +24,10 @@ def host_connect_request(package: Package, host_socket: socket.socket, server: S
     successful_connect_response = ConnectionResponsePackage()
 
     successful_connect_response.send(host_socket)
+
+
+def host_connect_lost(package: Package, host_socket: socket.socket, sever: StorageServer) -> None:
+    host_addr = host_socket.getpeername()
+
+    logging.info(f'Host {host_addr} disconnecting...')
+
