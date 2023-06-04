@@ -9,10 +9,10 @@ from StorageServer import StorageServer
 def handle_package(package: Package, host_socket: socket.socket, server: StorageServer) -> None:
     match package.get_type():
         case PackageType.HOST_CONNECT_REQUEST:
-            handle_host_connect_request(package, host_socket, server)
+            handle_host_connect_request(host_socket, server)
 
 
-def handle_host_connect_request(package: Package, host_socket: socket.socket, server: StorageServer) -> None:
+def handle_host_connect_request(host_socket: socket.socket, server: StorageServer) -> None:
     host_addr = host_socket.getpeername()
 
     logging.info(f'Host {host_addr} connected!')
@@ -22,4 +22,3 @@ def handle_host_connect_request(package: Package, host_socket: socket.socket, se
     successful_connect_response = ConnectionResponsePackage()
 
     successful_connect_response.send(host_socket)
-

@@ -1,11 +1,10 @@
 import logging
 import socket
 import threading
-from typing import Optional
 
 from p2pstorage_core.helper_classes.SocketAddress import SocketAddress
 from p2pstorage_core.server.Exceptions import EmptyHeaderException, InvalidHeaderException
-from p2pstorage_core.server.Package import PackageType, Package, ConnectionResponsePackage, ConnectionLostPackage
+from p2pstorage_core.server.Package import PackageType, Package, ConnectionLostPackage
 
 
 class StorageServer:
