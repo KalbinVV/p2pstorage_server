@@ -1,7 +1,7 @@
 import logging
 import socket
 
-from p2pstorage_core.server.Host import Host
+from p2pstorage_core.server.Host import Host, HostInfo
 from p2pstorage_core.server.Package import Package, ConnectionResponsePackage, PackageType, ConnectionRequestPackage, \
     HostsListResponsePackage
 
@@ -34,6 +34,8 @@ def handle_host_connect_request(package, host_socket: socket.socket, server: Sto
 def handle_host_list_request(host_socket: socket.socket, server: StorageServer) -> None:
     hosts = server.get_connected_hosts()
 
-    hosts_list_response = HostsListResponsePackage(response_approved=True, hosts_list=hosts)
+    hosts_info = [HostInfo(h.host_name, h.host_socket.getpeername()) for h in hosts]
+
+    hosts_list_response = HostsListResponsePackage(response_approved=True, hosts_list=hosts_info)
 
     hosts_list_response.send(host_socket)
