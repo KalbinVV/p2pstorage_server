@@ -4,6 +4,7 @@ import threading
 
 from p2pstorage_core.helper_classes.SocketAddress import SocketAddress
 from p2pstorage_core.server.Exceptions import EmptyHeaderException, InvalidHeaderException
+from p2pstorage_core.server.Host import Host
 from p2pstorage_core.server.Package import PackageType, Package, ConnectionLostPackage
 
 
@@ -15,12 +16,12 @@ class StorageServer:
 
         self.__server_socket.bind(server_address)
 
-        self.__connected_hosts: dict[SocketAddress, socket.socket] = dict()
+        self.__connected_hosts: dict[SocketAddress, Host] = dict()
 
         self.__running = False
 
-    def add_connected_host(self, addr: SocketAddress, host_socket: socket.socket) -> None:
-        self.__connected_hosts[addr] = host_socket
+    def add_connected_host(self, addr: SocketAddress, host: Host) -> None:
+        self.__connected_hosts[addr] = host
 
     def is_host_connected(self, addr: SocketAddress) -> bool:
         return addr in self.__connected_hosts
@@ -49,10 +50,10 @@ class StorageServer:
 
         logging.info('Closing connections...')
 
-        for host_addr, host_socket in self.__connected_hosts.items():
+        for host_addr, host in self.__connected_hosts.items():
             server_stop_package = ConnectionLostPackage('Server stopped')
 
-            server_stop_package.send(host_socket)
+            server_stop_package.send(host.host_socket)
 
         self.__server_socket.close()
 

@@ -1,7 +1,8 @@
 import logging
 import socket
 
-from p2pstorage_core.server.Package import Package, ConnectionResponsePackage, PackageType
+from p2pstorage_core.server.Host import Host
+from p2pstorage_core.server.Package import Package, ConnectionResponsePackage, PackageType, ConnectionRequestPackage
 
 from StorageServer import StorageServer
 
@@ -9,15 +10,18 @@ from StorageServer import StorageServer
 def handle_package(package: Package, host_socket: socket.socket, server: StorageServer) -> None:
     match package.get_type():
         case PackageType.HOST_CONNECT_REQUEST:
-            handle_host_connect_request(host_socket, server)
+            handle_host_connect_request(package, host_socket, server)
 
 
-def handle_host_connect_request(host_socket: socket.socket, server: StorageServer) -> None:
+def handle_host_connect_request(package, host_socket: socket.socket, server: StorageServer) -> None:
+    connect_request_package = ConnectionRequestPackage.from_abstract(package)
+
     host_addr = host_socket.getpeername()
+    host_name = connect_request_package.get_host_name()
 
-    logging.info(f'Host {host_addr} connected!')
+    logging.info(f'Host {host_addr}:{host_name} connected!')
 
-    server.add_connected_host(host_addr, host_socket)
+    server.add_connected_host(host_addr, Host(host_name, host_socket))
 
     successful_connect_response = ConnectionResponsePackage()
 
