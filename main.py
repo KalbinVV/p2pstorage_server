@@ -6,7 +6,10 @@ from StorageServer import StorageServer
 
 
 def main():
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.DEBUG,
+                        format='[%(asctime)s] [%(levelname)s] > %(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S'
+                        )
 
     server_address = SocketAddress('localhost', 5000)
 
