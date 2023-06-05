@@ -29,6 +29,9 @@ class StorageServer:
     def remove_connected_host(self, addr: SocketAddress) -> None:
         del self.__connected_hosts[addr]
 
+    def get_connected_hosts(self) -> list[Host]:
+        return self.__connected_hosts.values()
+
     def run(self):
         self.__server_socket.listen()
 
