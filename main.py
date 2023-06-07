@@ -14,7 +14,10 @@ def main():
                         datefmt='%Y-%m-%d %H:%M:%S'
                         )
 
-    server_host = socket.gethostbyname(socket.gethostname())
+    if Configuration.HOST is None:
+        server_host = socket.gethostbyname(socket.gethostname())
+    else:
+        server_host = Configuration.HOST
 
     server_address = SocketAddress(server_host, Configuration.PORT)
 

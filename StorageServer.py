@@ -25,7 +25,10 @@ class StorageServer:
         self.init_hosts_manager()
         self.init_files_manager()
 
-        self.__handling_thread: threading.Thread | None = None
+        self.__handle_connections_locks: dict[SocketAddress, threading.Lock] = dict()
+
+    def get_handling_lock(self, addr: SocketAddress) -> threading.Lock:
+        return self.__handle_connections_locks[addr]
 
     def init_hosts_manager(self) -> None:
         self.__hosts_manager = HostsManager()
@@ -54,10 +57,10 @@ class StorageServer:
 
                 logging.info(f'Host {addr} try to connect...')
 
-                self.__handling_thread = threading.Thread(target=self.handle_connection,
-                                                          args=(client_socket,))
+                handling_thread = threading.Thread(target=self.handle_connection,
+                                                   args=(client_socket,))
 
-                self.__handling_thread.start()
+                handling_thread.start()
 
             except KeyboardInterrupt:
                 self.__running = False
@@ -74,6 +77,10 @@ class StorageServer:
     def handle_connection(self, host_socket: socket.socket) -> None:
         connection_active = True
         host_addr = host_socket.getpeername()
+
+        thread_lock = threading.Lock()
+
+        self.__handle_connections_locks[host_addr] = thread_lock
 
         def disconnect_host():
             hosts_manager = self.get_hosts_manager()
@@ -102,7 +109,9 @@ class StorageServer:
                 break
 
             from PackagesHandlers import handle_package
-            handle_package(package, host_socket, self)
+            handle_package(package, host_socket, self, thread_lock)
+
+        del self.__handle_connections_locks[host_addr]
 
         host_socket.close()
 

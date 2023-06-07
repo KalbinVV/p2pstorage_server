@@ -1,5 +1,6 @@
 import logging
 import socket
+import threading
 
 from p2pstorage_core.server.Host import Host, HostInfo
 import p2pstorage_core.server.Package as Pckg
@@ -8,7 +9,8 @@ import Configuration
 from StorageServer import StorageServer
 
 
-def handle_package(package: Pckg.Package, host_socket: socket.socket, server: StorageServer) -> None:
+def handle_package(package: Pckg.Package, host_socket: socket.socket, server: StorageServer,
+                   thread_lock: threading.Lock) -> None:
     match package.get_type():
         case Pckg.PackageType.HOST_CONNECT_REQUEST:
             handle_host_connect_request(package, host_socket, server)
@@ -19,7 +21,7 @@ def handle_package(package: Pckg.Package, host_socket: socket.socket, server: St
         case Pckg.PackageType.FILES_LIST_REQUEST:
             handle_files_list_request(host_socket, server)
         case Pckg.PackageType.GET_FILE_BY_ID_REQUEST:
-            handle_get_file_by_id_request(package, host_socket, server)
+            handle_get_file_by_id_request(package, host_socket, server, thread_lock)
 
 
 def handle_host_connect_request(package, host_socket: socket.socket, server: StorageServer) -> None:
@@ -73,7 +75,9 @@ def handle_files_list_request(host_socket: socket.socket, server: StorageServer)
 
 
 def handle_get_file_by_id_request(package: Pckg.Package, host_socket: socket.socket,
-                                  server: StorageServer) -> None:
+                                  server: StorageServer, thread_lock) -> None:
+
+    thread_lock.acquire()
 
     get_file_by_id_request_package = Pckg.GetFileByIdRequestPackage.from_abstract(package)
 
@@ -100,8 +104,8 @@ def handle_get_file_by_id_request(package: Pckg.Package, host_socket: socket.soc
         for addr in files_owners:
             host = hosts_manager.get_host_by_addr(addr)
 
-            if host.host_socket.getpeername() == host_socket.getpeername():
-                continue
+            #if host.host_socket.getpeername() == host_socket.getpeername():
+               # continue
 
             contains_file_request = Pckg.FileContainsRequestPackage(file_info.name)
             contains_file_request.send(host.host_socket)
@@ -124,3 +128,5 @@ def handle_get_file_by_id_request(package: Pckg.Package, host_socket: socket.soc
 
             transaction_start_response: Pckg.FileTransactionStartResponsePackage = Pckg.Package.recv(host_socket)
             transaction_start_response.send(host_socket)
+
+    thread_lock.release()
