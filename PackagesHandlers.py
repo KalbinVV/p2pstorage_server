@@ -9,8 +9,7 @@ import Configuration
 from StorageServer import StorageServer
 
 
-def handle_package(package: Pckg.Package, host_socket: socket.socket, server: StorageServer,
-                   thread_lock: threading.Lock) -> None:
+def handle_package(package: Pckg.Package, host_socket: socket.socket, server: StorageServer) -> None:
     match package.get_type():
         case Pckg.PackageType.HOST_CONNECT_REQUEST:
             handle_host_connect_request(package, host_socket, server)
@@ -75,9 +74,7 @@ def handle_files_list_request(host_socket: socket.socket, server: StorageServer)
 
 
 def handle_get_file_by_id_request(package: Pckg.Package, host_socket: socket.socket,
-                                  server: StorageServer, thread_lock) -> None:
-
-    thread_lock.acquire()
+                                  server: StorageServer) -> None:
 
     get_file_by_id_request_package = Pckg.GetFileByIdRequestPackage.from_abstract(package)
 
@@ -107,10 +104,16 @@ def handle_get_file_by_id_request(package: Pckg.Package, host_socket: socket.soc
             #if host.host_socket.getpeername() == host_socket.getpeername():
                # continue
 
+            lock = server.get_socket_handler_thread_lock(host.host_socket)
+
+            lock.acquire()
+
             contains_file_request = Pckg.FileContainsRequestPackage(file_info.name)
             contains_file_request.send(host.host_socket)
 
             contains_file_response: Pckg.FileContainsResponsePackage = Pckg.Package.recv(host.host_socket)
+
+            lock.release()
 
             if contains_file_response.is_file_contains():
                 sender_host = host.host_socket
@@ -128,5 +131,3 @@ def handle_get_file_by_id_request(package: Pckg.Package, host_socket: socket.soc
 
             transaction_start_response: Pckg.FileTransactionStartResponsePackage = Pckg.Package.recv(host_socket)
             transaction_start_response.send(host_socket)
-
-    thread_lock.release()

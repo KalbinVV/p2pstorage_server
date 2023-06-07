@@ -27,8 +27,8 @@ class StorageServer:
 
         self.__handle_connections_locks: dict[SocketAddress, threading.Lock] = dict()
 
-    def get_handling_lock(self, addr: SocketAddress) -> threading.Lock:
-        return self.__handle_connections_locks[addr]
+    def get_socket_handler_thread_lock(self, host_socket: socket.socket) -> threading.Lock:
+        return self.__handle_connections_locks[host_socket.getpeername()]
 
     def init_hosts_manager(self) -> None:
         self.__hosts_manager = HostsManager()
