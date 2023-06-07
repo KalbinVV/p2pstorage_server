@@ -109,7 +109,7 @@ class StorageServer:
                 break
 
             from PackagesHandlers import handle_package
-            handle_package(package, host_socket, self, thread_lock)
+            handle_package(package, host_socket, self)
 
         del self.__handle_connections_locks[host_addr]
 
