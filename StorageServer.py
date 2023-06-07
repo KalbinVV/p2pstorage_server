@@ -7,33 +7,42 @@ from p2pstorage_core.server.Exceptions import EmptyHeaderException, InvalidHeade
 from p2pstorage_core.server.Host import Host
 from p2pstorage_core.server.Package import PackageType, Package, ConnectionLostPackage
 
+from db.HostsManager import HostsManager
+from db.SqliteSingletonManager import SqliteSingletonManager
+
 
 class StorageServer:
     def __init__(self, server_address: SocketAddress):
         self.__server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-        self.__server_address = server_address
-
         self.__server_socket.bind(server_address)
 
-        self.__connected_hosts: dict[SocketAddress, Host] = dict()
-
         self.__running = False
+        self.__server_address = server_address
+        self.__hosts_manager: HostsManager | None = None
+
+        self.init_hosts_manager()
+
+    def init_hosts_manager(self) -> None:
+        self.__hosts_manager = HostsManager()
+
+        self.__hosts_manager.init_table()
 
     def add_connected_host(self, addr: SocketAddress, host: Host) -> None:
-        self.__connected_hosts[addr] = host
+        self.__hosts_manager.add_host(addr, host)
 
     def is_host_connected(self, addr: SocketAddress) -> bool:
-        return addr in self.__connected_hosts
+        return self.__hosts_manager.contains_host(addr)
 
     def remove_connected_host(self, addr: SocketAddress) -> None:
-        del self.__connected_hosts[addr]
+        return self.__hosts_manager.remove_host(addr)
 
     def get_connected_hosts(self) -> list[Host]:
-        return list(self.__connected_hosts.values())
+        return self.__hosts_manager.get_hosts()
 
     def get_connected_host_by_addr(self, addr: SocketAddress) -> Host:
-        return self.__connected_hosts[addr]
+        host_id, host_name, host_socket = self.__hosts_manager.get_host_by_addr(addr)
+
+        return Host(host_name, host_socket)
 
     def run(self):
         self.__server_socket.listen()
@@ -56,7 +65,7 @@ class StorageServer:
 
         logging.info('Closing connections...')
 
-        for host_addr, host in self.__connected_hosts.items():
+        for host in self.__hosts_manager.get_hosts():
             server_stop_package = ConnectionLostPackage('Server stopped')
 
             server_stop_package.send(host.host_socket)
@@ -95,3 +104,8 @@ class StorageServer:
             handle_package(package, host_socket, self)
 
         host_socket.close()
+
+    def __del__(self):
+        logging.debug('Closing db...')
+
+        SqliteSingletonManager.instance().close()

@@ -1,0 +1,1 @@
+select id, name from hosts where addr=? and port=? limit 1

@@ -1,0 +1,1 @@
+insert into hosts(name, addr, port) values(?, ?, ?)

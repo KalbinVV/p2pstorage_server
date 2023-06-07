@@ -5,6 +5,7 @@ from p2pstorage_core.helper_classes.SocketAddress import SocketAddress
 
 import Configuration
 from StorageServer import StorageServer
+from db.SqliteSingletonManager import SqliteSingletonManager
 
 
 def main():

@@ -1,0 +1,1 @@
+select id, name, addr, port from hosts
