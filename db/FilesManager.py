@@ -21,7 +21,7 @@ class FilesManager:
     def get_files(self) -> list[FileDataBaseInfo]:
         files: list[FileDataBaseInfo] = list()
 
-        for row in self.__sqlite_manager.execute('./db/sqls/get_files.sql'):
+        for row in self.__sqlite_manager.execute_file('./db/sqls/get_files.sql'):
             files.append(FileDataBaseInfo(row))
 
         return files

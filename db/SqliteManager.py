@@ -1,3 +1,4 @@
+import logging
 import os
 import sqlite3
 from sqlite3 import Cursor
@@ -14,6 +15,8 @@ class SqliteManager:
         self.__cursor.execute('PRAGMA foreign_keys = ON;')
 
     def execute(self, sql_query: str, parameters: tuple = tuple()) -> Cursor:
+        logging.debug(f'SQL: {sql_query}')
+
         self.__cursor.execute(sql_query, parameters)
         self.__connection.commit()
 

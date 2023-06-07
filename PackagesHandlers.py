@@ -16,6 +16,8 @@ def handle_package(package: Pckg.Package, host_socket: socket.socket, server: St
             handle_host_list_request(host_socket, server)
         case Pckg.PackageType.NEW_FILE_REQUEST:
             handle_new_file_request(package, host_socket, server)
+        case Pckg.PackageType.FILES_LIST_REQUEST:
+            handle_files_list_request(host_socket, server)
 
 
 def handle_host_connect_request(package, host_socket: socket.socket, server: StorageServer) -> None:
@@ -57,3 +59,11 @@ def handle_new_file_request(package: Pckg.Package, host_socket: socket.socket, s
     new_file_response_package = Pckg.NewFileResponsePackage()
 
     new_file_response_package.send(host_socket)
+
+
+def handle_files_list_request(host_socket: socket.socket, server: StorageServer) -> None:
+    files_list = server.get_files_manager().get_files()
+
+    files_list_response = Pckg.FilesListResponsePackage(files_list=files_list)
+
+    files_list_response.send(host_socket)
