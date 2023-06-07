@@ -1,0 +1,1 @@
+insert into tables(host_id, name, size, hash) values(?, ?, ?, ?)

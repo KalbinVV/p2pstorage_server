@@ -23,14 +23,13 @@ class HostsManager:
 
         return host_id
 
-    # TODO: Change to NamedTuple in future
-    def get_host_by_addr(self, host_addr: SocketAddress) -> tuple[id, str, socket.socket]:
+    def get_host_by_addr(self, host_addr: SocketAddress) -> Host:
         addr, port = host_addr
 
         host_id, host_name = self.__sqlite_manager.execute_file('./db/sqls/get_host_by_addr.sql',
                                                                 (addr, port)).fetchone()
 
-        return host_id, host_name, self.__sockets_dict[host_id]
+        return Host(host_name, self.__sockets_dict[host_id])
 
     def add_host(self, host_addr: SocketAddress, host: Host) -> None:
         addr, port = host_addr
@@ -47,17 +46,17 @@ class HostsManager:
         self.__sockets_dict[host_id] = host.host_socket
 
     def remove_host(self, host_addr: SocketAddress):
-        # TODO: Change to NamedTuple
-        host_id, _, _ = self.get_host_by_addr(host_addr)
+        host_id = self.get_host_id_by_addr(host_addr)
 
         self.__sqlite_manager.execute_file('./db/sqls/remove_host.sql',
                                            (host_id,))
 
+        logging.debug(f'Host removed: id = {host_id}, addr = {host_addr}')
+
         del self.__sockets_dict[host_id]
 
     def contains_host(self, host_addr: SocketAddress):
-        # TODO: Change to NamedTuple
-        host_id, _, _ = self.get_host_by_addr(host_addr)
+        host_id = self.get_host_id_by_addr(host_addr)
 
         return (self.__sqlite_manager.execute_file('./db/sqls/contains_host.sql',
                                                    (host_id,)).fetchone() == (1,))

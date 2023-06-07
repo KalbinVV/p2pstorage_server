@@ -12,3 +12,6 @@ class SqliteSingletonManager:
             cls.__sqlite_manager = SqliteManager()
 
         return cls.__sqlite_manager
+
+    def __init__(self):
+        raise Exception('You should use instance()!')
