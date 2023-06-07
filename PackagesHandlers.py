@@ -1,5 +1,6 @@
 import logging
 import socket
+import sqlite3
 
 from p2pstorage_core.server.Host import Host, HostInfo
 import p2pstorage_core.server.Package as Pckg
@@ -18,6 +19,8 @@ def handle_package(package: Pckg.Package, host_socket: socket.socket, server: St
             handle_new_file_request(package, host_socket, server)
         case Pckg.PackageType.FILES_LIST_REQUEST:
             handle_files_list_request(host_socket, server)
+        case Pckg.PackageType.GET_FILE_BY_ID_REQUEST:
+            handle_get_file_by_id_request(package, host_socket, server)
 
 
 def handle_host_connect_request(package, host_socket: socket.socket, server: StorageServer) -> None:
@@ -54,7 +57,13 @@ def handle_new_file_request(package: Pckg.Package, host_socket: socket.socket, s
     host_addr = host_socket.getpeername()
     host_id = server.get_hosts_manager().get_host_id_by_addr(host_addr)
 
-    server.get_files_manager().add_file(file_info, host_id)
+    try:
+        server.get_files_manager().add_file(file_info, host_id)
+    except sqlite3.IntegrityError:
+        unsuccessful_file_add_response = Pckg.NewFileResponsePackage(False, 'Files should be unique!')
+        unsuccessful_file_add_response.send(host_socket)
+
+        return
 
     new_file_response_package = Pckg.NewFileResponsePackage()
 
@@ -67,3 +76,49 @@ def handle_files_list_request(host_socket: socket.socket, server: StorageServer)
     files_list_response = Pckg.FilesListResponsePackage(files_list=files_list)
 
     files_list_response.send(host_socket)
+
+
+def handle_get_file_by_id_request(package: Pckg.Package, host_socket: socket.socket,
+                                  server: StorageServer) -> None:
+    get_file_by_id_request_package = Pckg.GetFileByIdRequestPackage.from_abstract(package)
+
+    files_manager = server.get_files_manager()
+
+    file_id = get_file_by_id_request_package.get_file_id()
+
+    if not files_manager.contains_file_by_id(file_id):
+        get_file_by_id_response = Pckg.FileTransactionStartResponsePackage(transaction_started=False,
+                                                                           reject_reason='File not exists!',
+                                                                           sender_addr=None)
+        get_file_by_id_response.send(host_socket)
+        return
+    else:
+        hosts_manager = server.get_hosts_manager()
+
+        files_owners = files_manager.get_file_owners(file_id)
+
+        file_info = files_manager.get_file_by_id(file_id)
+
+        sender_host: socket.socket | None = None
+
+        for addr in files_owners:
+            host = hosts_manager.get_host_by_addr(addr)
+
+            contains_file_request = Pckg.FileContainsRequestPackage(file_info.path)
+            contains_file_request.send(host.host_socket)
+
+            contains_file_response: Pckg.FileContainsResponsePackage = Pckg.Package.recv(host.host_socket)
+
+            if contains_file_response.is_file_contains():
+                sender_host = host.host_socket
+                break
+
+        if not sender_host:
+            transaction_start_response = Pckg.FileTransactionStartResponsePackage(transaction_started=False,
+                                                                                  reject_reason='File not exists!',
+                                                                                  sender_addr=None)
+            transaction_start_response.send(host_socket)
+        else:
+            transaction_start_request = Pckg.FileTransactionStartRequestPackage(file_info.path)
+
+            transaction_start_request.send(sender_host)
