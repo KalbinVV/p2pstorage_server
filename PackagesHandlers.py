@@ -1,6 +1,5 @@
 import logging
 import socket
-import threading
 
 from p2pstorage_core.server.Host import Host, HostInfo
 import p2pstorage_core.server.Package as Pckg
@@ -20,7 +19,7 @@ def handle_package(package: Pckg.Package, host_socket: socket.socket, server: St
         case Pckg.PackageType.FILES_LIST_REQUEST:
             handle_files_list_request(host_socket, server)
         case Pckg.PackageType.GET_FILE_BY_ID_REQUEST:
-            handle_get_file_by_id_request(package, host_socket, server, thread_lock)
+            handle_get_file_by_id_request(package, host_socket, server)
 
 
 def handle_host_connect_request(package, host_socket: socket.socket, server: StorageServer) -> None:
