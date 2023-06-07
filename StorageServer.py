@@ -25,6 +25,8 @@ class StorageServer:
         self.init_hosts_manager()
         self.init_files_manager()
 
+        self.__handling_thread: threading.Thread | None = None
+
     def init_hosts_manager(self) -> None:
         self.__hosts_manager = HostsManager()
 
@@ -52,10 +54,10 @@ class StorageServer:
 
                 logging.info(f'Host {addr} try to connect...')
 
-                client_thread = threading.Thread(target=self.handle_connection,
-                                                 args=(client_socket,))
+                self.__handling_thread = threading.Thread(target=self.handle_connection,
+                                                          args=(client_socket,))
 
-                client_thread.start()
+                self.__handling_thread.start()
 
             except KeyboardInterrupt:
                 self.__running = False
