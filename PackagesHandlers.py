@@ -52,4 +52,8 @@ def handle_new_file_request(package: Pckg.Package, host_socket: socket.socket, s
     host_addr = host_socket.getpeername()
     host_id = server.get_hosts_manager().get_host_id_by_addr(host_addr)
 
+    server.get_files_manager().add_file(file_info, host_id)
 
+    new_file_response_package = Pckg.NewFileResponsePackage()
+
+    new_file_response_package.send(host_socket)

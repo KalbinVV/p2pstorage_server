@@ -4,5 +4,5 @@ create table if not exists files(
     name str not null,
     size integer not null,
     hash str not null,
-    foreign key(host_id) references hosts(id)
+    foreign key(host_id) references hosts(id) on delete cascade
 )

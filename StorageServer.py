@@ -38,6 +38,9 @@ class StorageServer:
     def get_hosts_manager(self) -> HostsManager:
         return self.__hosts_manager
 
+    def get_files_manager(self) -> FilesManager:
+        return self.__files_manager
+
     def run(self):
         self.__server_socket.listen()
 

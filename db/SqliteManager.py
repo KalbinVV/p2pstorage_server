@@ -10,8 +10,14 @@ class SqliteManager:
         self.__connection = sqlite3.connect(self.STORAGE_PATH, check_same_thread=False)
         self.__cursor = self.__connection.cursor()
 
+        # Add support for foreign keys
+        self.__cursor.execute('PRAGMA foreign_keys = ON;')
+
     def execute(self, sql_query: str, parameters: tuple = tuple()) -> Cursor:
-        return self.__cursor.execute(sql_query, parameters)
+        self.__cursor.execute(sql_query, parameters)
+        self.__connection.commit()
+
+        return self.__cursor
 
     def execute_file(self, file_path: str, parameters: tuple = tuple()) -> Cursor:
         with open(file_path, 'r') as f:
