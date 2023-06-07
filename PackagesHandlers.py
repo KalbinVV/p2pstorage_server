@@ -100,6 +100,9 @@ def handle_get_file_by_id_request(package: Pckg.Package, host_socket: socket.soc
         for addr in files_owners:
             host = hosts_manager.get_host_by_addr(addr)
 
+            if host.host_socket.getpeername() == host_socket.getpeername():
+                continue
+
             contains_file_request = Pckg.FileContainsRequestPackage(file_info.name)
             contains_file_request.send(host.host_socket)
 
