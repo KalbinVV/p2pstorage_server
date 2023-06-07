@@ -32,7 +32,7 @@ class StorageServer:
     def get_connected_hosts(self) -> list[Host]:
         return list(self.__connected_hosts.values())
 
-    def get_connect_host_by_addr(self, addr: SocketAddress) -> Host:
+    def get_connected_host_by_addr(self, addr: SocketAddress) -> Host:
         return self.__connected_hosts[addr]
 
     def run(self):
@@ -68,7 +68,7 @@ class StorageServer:
         host_addr = host_socket.getpeername()
 
         def disconnect_host():
-            host = self.get_connect_host_by_addr(host_addr)
+            host = self.get_connected_host_by_addr(host_addr)
 
             logging.info(f'Host {host_addr}:{host.host_name} disconnected!')
 
