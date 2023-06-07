@@ -1,7 +1,9 @@
 import logging
+import socket
 
 from p2pstorage_core.helper_classes.SocketAddress import SocketAddress
 
+import Configuration
 from StorageServer import StorageServer
 
 
@@ -11,11 +13,13 @@ def main():
                         datefmt='%Y-%m-%d %H:%M:%S'
                         )
 
-    server_address = SocketAddress('localhost', 5000)
+    server_host = socket.gethostbyname(socket.gethostname())
+
+    server_address = SocketAddress(server_host, Configuration.PORT)
 
     storage_server = StorageServer(server_address)
 
-    logging.info('Server started!')
+    logging.info(f'Server started on {server_address}!')
 
     storage_server.run()
 

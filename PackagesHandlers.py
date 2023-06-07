@@ -5,6 +5,7 @@ from p2pstorage_core.server.Host import Host, HostInfo
 from p2pstorage_core.server.Package import Package, ConnectionResponsePackage, PackageType, ConnectionRequestPackage, \
     HostsListResponsePackage
 
+import Configuration
 from StorageServer import StorageServer
 
 
@@ -26,7 +27,8 @@ def handle_host_connect_request(package, host_socket: socket.socket, server: Sto
 
     server.add_connected_host(host_addr, Host(host_name, host_socket))
 
-    successful_connect_response = ConnectionResponsePackage()
+    successful_connect_response = ConnectionResponsePackage(True,
+                                                            broadcast_message=Configuration.BROADCAST_MESSAGE)
 
     successful_connect_response.send(host_socket)
 
