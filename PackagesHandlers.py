@@ -126,8 +126,14 @@ def handle_get_file_by_id_request(package: Pckg.Package, host_socket: socket.soc
                                                                                   sender_addr=None)
             transaction_start_response.send(host_socket)
         else:
-            transaction_start_request = Pckg.FileTransactionStartRequestPackage(file_info.name)
+            transaction_start_request = Pckg.FileTransactionStartRequestPackage(file_info.name,
+                                                                                sender_host.getpeername())
+            server.set_connection_handler_block(sender_host.getpeername(), True)
+
             transaction_start_request.send(sender_host)
 
-            transaction_start_response: Pckg.FileTransactionStartResponsePackage = Pckg.Package.recv(host_socket)
+            transaction_start_response: Pckg.FileTransactionStartResponsePackage = Pckg.Package.recv(sender_host)
+
+            server.set_connection_handler_block(sender_host.getpeername(), False)
+
             transaction_start_response.send(host_socket)
