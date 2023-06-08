@@ -74,7 +74,6 @@ def handle_files_list_request(host_socket: socket.socket, server: StorageServer)
 
 def handle_get_file_by_id_request(package: Pckg.Package, host_socket: socket.socket,
                                   server: StorageServer) -> None:
-
     get_file_by_id_request_package = Pckg.GetFileByIdRequestPackage.from_abstract(package)
 
     files_manager = server.get_files_manager()
@@ -100,19 +99,17 @@ def handle_get_file_by_id_request(package: Pckg.Package, host_socket: socket.soc
         for addr in files_owners:
             host = hosts_manager.get_host_by_addr(addr)
 
-            #if host.host_socket.getpeername() == host_socket.getpeername():
-               # continue
+            # if host.host_socket.getpeername() == host_socket.getpeername():
+            #   continue
 
-            lock = server.get_socket_handler_thread_lock(host.host_socket)
-
-            lock.acquire()
+            server.set_connection_handler_block(addr, True)
 
             contains_file_request = Pckg.FileContainsRequestPackage(file_info.name)
             contains_file_request.send(host.host_socket)
 
             contains_file_response: Pckg.FileContainsResponsePackage = Pckg.Package.recv(host.host_socket)
 
-            lock.release()
+            server.set_connection_handler_block(addr, False)
 
             if contains_file_response.is_file_contains():
                 sender_host = host.host_socket

@@ -1,6 +1,7 @@
 import logging
 import socket
 import threading
+from asyncio import sleep
 
 from p2pstorage_core.helper_classes.SocketAddress import SocketAddress
 from p2pstorage_core.server.Exceptions import EmptyHeaderException, InvalidHeaderException
@@ -25,10 +26,13 @@ class StorageServer:
         self.init_hosts_manager()
         self.init_files_manager()
 
-        self.__handle_connections_locks: dict[SocketAddress, threading.Lock] = dict()
+        self.__connections_handlers_blocks: dict[SocketAddress, bool] = dict()
 
-    def get_socket_handler_thread_lock(self, host_socket: socket.socket) -> threading.Lock:
-        return self.__handle_connections_locks[host_socket.getpeername()]
+    def set_connection_handler_block(self, addr: SocketAddress, blocked: bool) -> None:
+        self.__connections_handlers_blocks[addr] = blocked
+
+    def is_connection_handler_blocked(self, addr: SocketAddress) -> bool:
+        return self.__connections_handlers_blocks[addr]
 
     def init_hosts_manager(self) -> None:
         self.__hosts_manager = HostsManager()
@@ -78,9 +82,7 @@ class StorageServer:
         connection_active = True
         host_addr = host_socket.getpeername()
 
-        thread_lock = threading.Lock()
-
-        self.__handle_connections_locks[host_addr] = thread_lock
+        self.__connections_handlers_blocks[host_addr] = False
 
         def disconnect_host():
             hosts_manager = self.get_hosts_manager()
@@ -93,6 +95,10 @@ class StorageServer:
                 hosts_manager.remove_host(host_addr)
 
         while connection_active and self.__running:
+            if self.is_connection_handler_blocked(host_addr):
+                sleep(0.5)
+                continue
+
             try:
                 package = Package.recv(host_socket)
             except EmptyHeaderException:
@@ -111,7 +117,7 @@ class StorageServer:
             from PackagesHandlers import handle_package
             handle_package(package, host_socket, self)
 
-        del self.__handle_connections_locks[host_addr]
+        del self.__connections_handlers_blocks[host_addr]
 
         host_socket.close()
 
