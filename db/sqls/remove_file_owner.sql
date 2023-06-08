@@ -1,0 +1,1 @@
+delete from files where id = ? and host_id = ?

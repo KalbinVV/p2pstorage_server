@@ -45,3 +45,7 @@ class FilesManager:
             files_owners.append(SocketAddress(addr, port))
 
         return files_owners
+
+    def remove_file_owner(self, file_id: int, host_id: int) -> None:
+        self.__sqlite_manager.execute_file('./db/sqls/remove_file_owner.sql',
+                                           (file_id, host_id))

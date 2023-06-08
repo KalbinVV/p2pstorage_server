@@ -114,6 +114,10 @@ def handle_get_file_by_id_request(package: Pckg.Package, host_socket: socket.soc
             if contains_file_response.is_file_contains():
                 sender_host = host.host_socket
                 break
+            else:
+                host_id = hosts_manager.get_host_id_by_addr(addr)
+
+                files_manager.remove_file_owner(file_id, host_id)
 
         if not sender_host:
             transaction_start_response = Pckg.FileTransactionStartResponsePackage(transaction_started=False,
