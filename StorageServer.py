@@ -50,6 +50,12 @@ class StorageServer:
     def get_files_manager(self) -> FilesManager:
         return self.__files_manager
 
+    def broadcast_package(self, package: Package) -> None:
+        hosts = self.get_hosts_manager().get_hosts()
+
+        for host in hosts:
+            package.send(host.host_socket)
+
     def run(self):
         self.__server_socket.listen()
 

@@ -37,6 +37,9 @@ def handle_host_connect_request(package, host_socket: socket.socket, server: Sto
 
     successful_connect_response.send(host_socket)
 
+    new_host_connected_package = Pckg.NewHostConnectedPackage(host_addr, host_name)
+    server.broadcast_package(new_host_connected_package)
+
 
 def handle_host_list_request(host_socket: socket.socket, server: StorageServer) -> None:
     hosts = server.get_hosts_manager().get_hosts()
