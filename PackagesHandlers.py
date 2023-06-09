@@ -20,6 +20,8 @@ def handle_package(package: Pckg.Package, host_socket: socket.socket, server: St
             handle_files_list_request(host_socket, server)
         case Pckg.PackageType.GET_FILE_BY_ID_REQUEST:
             handle_get_file_by_id_request(package, host_socket, server)
+        case Pckg.PackageType.TRANSACTION_FINISHED:
+            handle_transaction_finished(package, server)
 
 
 def handle_host_connect_request(package, host_socket: socket.socket, server: StorageServer) -> None:
@@ -103,10 +105,10 @@ def handle_get_file_by_id_request(package: Pckg.Package, host_socket: socket.soc
         for addr in files_owners:
             host = hosts_manager.get_host_by_addr(addr)
 
-            # if host.host_socket.getpeername() == host_socket.getpeername():
-            #   continue
+            if host.host_socket.getpeername() == host_socket.getpeername():
+                continue
 
-            server.set_connection_handler_block(addr, True)
+            server.set_connection_handler_block(addr.host, True)
 
             transaction_start_request = Pckg.FileTransactionStartRequestPackage(file_name,
                                                                                 addr)
@@ -114,9 +116,11 @@ def handle_get_file_by_id_request(package: Pckg.Package, host_socket: socket.soc
 
             transaction_start_response: Pckg.FileTransactionStartResponsePackage = Pckg.Package.recv(host.host_socket)
 
-            server.set_connection_handler_block(addr, False)
+            server.set_connection_handler_block(addr.host, False)
 
             if transaction_start_response.is_transaction_started():
+                server.set_connection_handler_block(addr.host, True)
+
                 transaction_start_response.send(host_socket)
                 host_was_found = True
                 break
@@ -131,3 +135,11 @@ def handle_get_file_by_id_request(package: Pckg.Package, host_socket: socket.soc
                                                                                   reject_reason='File not exists!',
                                                                                   sender_addr=None)
             transaction_start_response.send(host_socket)
+
+
+def handle_transaction_finished(package: Pckg.Package, server: StorageServer) -> None:
+    transaction_finished_package = Pckg.FileTransactionFinishedPackage.from_abstract(package)
+
+    host_addr = transaction_finished_package.get_sender_addr().host
+
+    server.set_connection_handler_block(host_addr, False)

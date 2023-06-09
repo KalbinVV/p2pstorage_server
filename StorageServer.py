@@ -1,7 +1,7 @@
 import logging
 import socket
 import threading
-from asyncio import sleep
+from time import sleep
 
 from p2pstorage_core.helper_classes.SocketAddress import SocketAddress
 from p2pstorage_core.server.Exceptions import EmptyHeaderException, InvalidHeaderException
@@ -26,12 +26,15 @@ class StorageServer:
         self.init_hosts_manager()
         self.init_files_manager()
 
-        self.__connections_handlers_blocks: dict[SocketAddress, bool] = dict()
+        self.__connections_handlers_blocks: dict[str, bool] = dict()
 
-    def set_connection_handler_block(self, addr: SocketAddress, blocked: bool) -> None:
+    # Addr: 127.0.1.1 for example
+    def set_connection_handler_block(self, addr: str, blocked: bool) -> None:
+        logging.info(f'Set {addr} block to {blocked}')
+
         self.__connections_handlers_blocks[addr] = blocked
 
-    def is_connection_handler_blocked(self, addr: SocketAddress) -> bool:
+    def is_connection_handler_blocked(self, addr: str) -> bool:
         return self.__connections_handlers_blocks[addr]
 
     def init_hosts_manager(self) -> None:
@@ -86,9 +89,11 @@ class StorageServer:
 
     def handle_connection(self, host_socket: socket.socket) -> None:
         connection_active = True
-        host_addr = host_socket.getpeername()
+        peer_name = host_socket.getpeername()
 
-        self.__connections_handlers_blocks[host_addr] = False
+        host_addr = SocketAddress(*peer_name)
+
+        self.__connections_handlers_blocks[host_addr.host] = False
 
         def disconnect_host():
             hosts_manager = self.get_hosts_manager()
@@ -101,17 +106,20 @@ class StorageServer:
                 hosts_manager.remove_host(host_addr)
 
         while connection_active and self.__running:
-            if self.is_connection_handler_blocked(host_addr):
-                sleep(0.5)
-                continue
-
             try:
-                package = Package.recv(host_socket)
+                if not self.is_connection_handler_blocked(host_addr.host):
+                    package = Package.recv(host_socket)
+                else:
+                    sleep(1)
+                    continue
             except EmptyHeaderException:
                 disconnect_host()
                 break
             except InvalidHeaderException:
                 logging.error(f'Invalid header from {host_addr}!')
+                continue
+            except (Exception, ) as e:
+                logging.error(f'Invalid package from {host_addr} to handler thread!')
                 continue
 
             logging.debug(f'Package from {host_addr}: {package}')
@@ -123,7 +131,7 @@ class StorageServer:
             from PackagesHandlers import handle_package
             handle_package(package, host_socket, self)
 
-        del self.__connections_handlers_blocks[host_addr]
+        del self.__connections_handlers_blocks[host_addr.host]
 
         host_socket.close()
 
