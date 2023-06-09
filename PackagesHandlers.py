@@ -62,7 +62,7 @@ def handle_new_file_request(package: Pckg.Package, host_socket: socket.socket, s
     for file_info in files_info:
         server.get_files_manager().add_file(file_info, host_id)
 
-        new_file_response_package = Pckg.NewFileResponsePackage()
+        new_file_response_package = Pckg.NewFileResponsePackage(file_info.name)
 
         new_file_response_package.send(host_socket)
 
