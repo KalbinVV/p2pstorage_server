@@ -1,7 +1,8 @@
+import asyncio
 import logging
 import socket
 import threading
-from time import sleep
+from asyncio import sleep
 
 from p2pstorage_core.helper_classes.SocketAddress import SocketAddress
 from p2pstorage_core.server.Exceptions import EmptyHeaderException, InvalidHeaderException
@@ -70,10 +71,7 @@ class StorageServer:
 
                 logging.info(f'Host {addr} try to connect...')
 
-                handling_thread = threading.Thread(target=self.handle_connection,
-                                                   args=(client_socket,))
-
-                handling_thread.start()
+                asyncio.run(self.handle_connection(client_socket))
 
             except KeyboardInterrupt:
                 self.__running = False
@@ -87,7 +85,7 @@ class StorageServer:
 
         self.__server_socket.close()
 
-    def handle_connection(self, host_socket: socket.socket) -> None:
+    async def handle_connection(self, host_socket: socket.socket) -> None:
         connection_active = True
         peer_name = host_socket.getpeername()
 
@@ -110,7 +108,7 @@ class StorageServer:
                 if not self.is_connection_handler_blocked(host_addr.host):
                     package = Package.recv(host_socket)
                 else:
-                    sleep(1)
+                    await sleep(1)
                     continue
             except EmptyHeaderException:
                 disconnect_host()
