@@ -86,7 +86,6 @@ def handle_get_file_by_id_request(package: Pckg.Package, host_socket: socket.soc
                                                                            reject_reason='File not exists!',
                                                                            sender_addr=None)
         get_file_by_id_response.send(host_socket)
-        return
     else:
         hosts_manager = server.get_hosts_manager()
 
@@ -94,7 +93,9 @@ def handle_get_file_by_id_request(package: Pckg.Package, host_socket: socket.soc
 
         file_info = files_manager.get_file_by_id(file_id)
 
-        sender_host: socket.socket | None = None
+        file_name = file_info.name
+
+        host_was_found = False
 
         for addr in files_owners:
             host = hosts_manager.get_host_by_addr(addr)
@@ -104,36 +105,26 @@ def handle_get_file_by_id_request(package: Pckg.Package, host_socket: socket.soc
 
             server.set_connection_handler_block(addr, True)
 
-            contains_file_request = Pckg.FileContainsRequestPackage(file_info.name)
-            contains_file_request.send(host.host_socket)
+            transaction_start_request = Pckg.FileTransactionStartRequestPackage(file_name,
+                                                                                addr)
+            transaction_start_request.send(host.host_socket)
 
-            contains_file_response: Pckg.FileContainsResponsePackage = Pckg.Package.recv(host.host_socket)
+            transaction_start_response: Pckg.FileTransactionStartResponsePackage = Pckg.Package.recv(host.host_socket)
 
             server.set_connection_handler_block(addr, False)
 
-            if contains_file_response.is_file_contains():
-                sender_host = host.host_socket
+            if transaction_start_response.is_transaction_started():
+                transaction_start_response.send(host_socket)
+                host_was_found = True
                 break
             else:
                 host_id = hosts_manager.get_host_id_by_addr(addr)
 
                 files_manager.remove_file_owner(file_id, host_id)
 
-        if not sender_host:
+        if not host_was_found:
             transaction_start_response = Pckg.FileTransactionStartResponsePackage(transaction_started=False,
                                                                                   file_name='',
                                                                                   reject_reason='File not exists!',
                                                                                   sender_addr=None)
-            transaction_start_response.send(host_socket)
-        else:
-            transaction_start_request = Pckg.FileTransactionStartRequestPackage(file_info.name,
-                                                                                sender_host.getpeername())
-            server.set_connection_handler_block(sender_host.getpeername(), True)
-
-            transaction_start_request.send(sender_host)
-
-            transaction_start_response: Pckg.FileTransactionStartResponsePackage = Pckg.Package.recv(sender_host)
-
-            server.set_connection_handler_block(sender_host.getpeername(), False)
-
             transaction_start_response.send(host_socket)
