@@ -9,6 +9,7 @@ from p2pstorage_core.server.Package import PackageType, Package, ConnectionLostP
 from db.FilesManager import FilesManager
 from db.HostsManager import HostsManager
 from db.SqliteSingletonManager import SqliteSingletonManager
+from db.TransactionsManager import TransactionsManager
 
 
 class StorageServer:
@@ -25,16 +26,7 @@ class StorageServer:
         self.init_hosts_manager()
         self.init_files_manager()
 
-        self.__connections_handlers_blocks: dict[str, bool] = dict()
-
-    # Addr: 127.0.1.1 for example
-    def set_connection_handler_block(self, addr: str, blocked: bool) -> None:
-        logging.info(f'Set {addr} block to {blocked}')
-
-        self.__connections_handlers_blocks[addr] = blocked
-
-    def is_connection_handler_blocked(self, addr: str) -> bool:
-        return self.__connections_handlers_blocks[addr]
+        self.__transactions_manager = TransactionsManager()
 
     def init_hosts_manager(self) -> None:
         self.__hosts_manager = HostsManager()
@@ -51,6 +43,9 @@ class StorageServer:
 
     def get_files_manager(self) -> FilesManager:
         return self.__files_manager
+
+    def get_transactions_manager(self) -> TransactionsManager:
+        return self.__transactions_manager
 
     def broadcast_package(self, package: Package) -> None:
         hosts = self.get_hosts_manager().get_hosts()
@@ -89,8 +84,6 @@ class StorageServer:
 
         host_addr = SocketAddress(*peer_name)
 
-        self.__connections_handlers_blocks[host_addr.host] = False
-
         def disconnect_host():
             hosts_manager = self.get_hosts_manager()
 
@@ -103,10 +96,7 @@ class StorageServer:
 
         while connection_active and self.__running:
             try:
-                if not self.is_connection_handler_blocked(host_addr.host):
-                    package = Package.recv(host_socket)
-                else:
-                    continue
+                package = Package.recv(host_socket)
             except EmptyHeaderException:
                 disconnect_host()
                 break
@@ -125,8 +115,6 @@ class StorageServer:
 
             from PackagesHandlers import handle_package
             handle_package(package, host_socket, self)
-
-        del self.__connections_handlers_blocks[host_addr.host]
 
         host_socket.close()
 

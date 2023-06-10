@@ -1,5 +1,6 @@
 import logging
 import socket
+from time import sleep
 
 from p2pstorage_core.server.Host import Host, HostInfo
 import p2pstorage_core.server.Package as Pckg
@@ -8,6 +9,7 @@ import Configuration
 from StorageServer import StorageServer
 
 
+# TODO: Refactor this, maybe dict
 def handle_package(package: Pckg.Package, host_socket: socket.socket, server: StorageServer) -> None:
     match package.get_type():
         case Pckg.PackageType.HOST_CONNECT_REQUEST:
@@ -20,8 +22,10 @@ def handle_package(package: Pckg.Package, host_socket: socket.socket, server: St
             handle_files_list_request(host_socket, server)
         case Pckg.PackageType.GET_FILE_BY_ID_REQUEST:
             handle_get_file_by_id_request(package, host_socket, server)
+        case Pckg.PackageType.FILE_TRANSACTION_START_RESPONSE:
+            handle_transaction_start_response(package, host_socket, server)
         case Pckg.PackageType.TRANSACTION_FINISHED:
-            handle_transaction_finished(package, server)
+            handle_transaction_finished_response(host_socket, server)
 
 
 def handle_host_connect_request(package, host_socket: socket.socket, server: StorageServer) -> None:
@@ -89,57 +93,67 @@ def handle_get_file_by_id_request(package: Pckg.Package, host_socket: socket.soc
         get_file_by_id_response = Pckg.FileTransactionStartResponsePackage(transaction_started=False,
                                                                            file_name='',
                                                                            reject_reason='File not exists!',
-                                                                           sender_addr=None)
+                                                                           sender_addr=None,
+                                                                           receiver_addr=None)
         get_file_by_id_response.send(host_socket)
-    else:
-        hosts_manager = server.get_hosts_manager()
 
-        files_owners = files_manager.get_file_owners(file_id)
+        return
 
-        file_info = files_manager.get_file_by_id(file_id)
+    file_name = files_manager.get_file_by_id(file_id).name
 
-        file_name = file_info.name
+    hosts_manager = server.get_hosts_manager()
 
-        host_was_found = False
+    transactions_manager = server.get_transactions_manager()
 
-        for addr in files_owners:
-            host = hosts_manager.get_host_by_addr(addr)
+    host_addr = host_socket.getpeername()
 
-            if host.host_socket.getpeername() == host_socket.getpeername():
-                continue
+    transaction_was_started = False
 
-            server.set_connection_handler_block(addr.host, True)
+    for another_host in hosts_manager.get_hosts():
+        # if another_host.host_socket.getpeername() == host_socket.getpeername():
+        # continue
 
-            transaction_start_request = Pckg.FileTransactionStartRequestPackage(file_name,
-                                                                                addr)
-            transaction_start_request.send(host.host_socket)
+        peer_name = another_host.host_socket.getpeername()
 
-            transaction_start_response: Pckg.FileTransactionStartResponsePackage = Pckg.Package.recv(host.host_socket)
+        transaction_start_request = Pckg.FileTransactionStartRequestPackage(file_name,
+                                                                            establish_addr=peer_name,
+                                                                            receiver_addr=host_addr)
+        transaction_start_request.send(another_host.host_socket)
 
-            server.set_connection_handler_block(addr.host, False)
+        # Waiting response from another host
+        sleep(1)
 
-            if transaction_start_response.is_transaction_started():
-                server.set_connection_handler_block(addr.host, True)
+        if transactions_manager.is_transaction_was_started(host_addr):
+            transaction_was_started = True
+            break
 
-                transaction_start_response.send(host_socket)
-                host_was_found = True
-                break
-            else:
-                host_id = hosts_manager.get_host_id_by_addr(addr)
-
-                files_manager.remove_file_owner(file_id, host_id)
-
-        if not host_was_found:
-            transaction_start_response = Pckg.FileTransactionStartResponsePackage(transaction_started=False,
-                                                                                  file_name='',
-                                                                                  reject_reason='File not exists!',
-                                                                                  sender_addr=None)
-            transaction_start_response.send(host_socket)
+    if not transaction_was_started:
+        transaction_start_response = Pckg.FileTransactionStartResponsePackage(None,
+                                                                              None,
+                                                                              file_name,
+                                                                              False,
+                                                                              'File not exists!')
+        transaction_start_response.send(host_socket)
 
 
-def handle_transaction_finished(package: Pckg.Package, server: StorageServer) -> None:
-    transaction_finished_package = Pckg.FileTransactionFinishedPackage.from_abstract(package)
+def handle_transaction_start_response(package: Pckg.Package, _host_socket: socket.socket,
+                                      server: StorageServer) -> None:
+    transaction_start_response = Pckg.FileTransactionStartResponsePackage.from_abstract(package)
 
-    host_addr = transaction_finished_package.get_sender_addr().host
+    transactions_manager = server.get_transactions_manager()
 
-    server.set_connection_handler_block(host_addr, False)
+    receiver_addr = transaction_start_response.get_receiver_addr()
+    receiver_host = server.get_hosts_manager().get_host_by_addr(receiver_addr)
+
+    if transaction_start_response.is_transaction_started():
+        transactions_manager.set_transaction_to_started(receiver_addr, True)
+
+        transaction_start_response.send(receiver_host.host_socket)
+
+
+def handle_transaction_finished_response(host_socket: socket.socket, server: StorageServer) -> None:
+    receiver_addr = host_socket.getpeername()
+
+    server.get_transactions_manager().set_transaction_to_started(receiver_addr, False)
+
+    logging.info(f'[Transaction] {receiver_addr} finished transaction!')
