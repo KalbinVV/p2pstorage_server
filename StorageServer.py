@@ -84,6 +84,10 @@ class StorageServer:
 
         host_addr = SocketAddress(*peer_name)
 
+        # TODO: Refactor this
+        from packages.handlers.PackagesHandlerSingleton import PackagesHandlerSingleton
+        packages_handler = PackagesHandlerSingleton.instance()
+
         def disconnect_host():
             hosts_manager = self.get_hosts_manager()
 
@@ -113,8 +117,7 @@ class StorageServer:
                 disconnect_host()
                 break
 
-            from PackagesHandlers import handle_package
-            handle_package(package, host_socket, self)
+            packages_handler.handle(package, host_socket, self)
 
         host_socket.close()
 

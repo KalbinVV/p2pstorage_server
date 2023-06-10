@@ -6,6 +6,7 @@ from p2pstorage_core.helper_classes.SocketAddress import SocketAddress
 import Configuration
 from StorageServer import StorageServer
 from db.SqliteSingletonManager import SqliteSingletonManager
+from packages.handlers.PackagesHandler import PackagesHandler
 
 
 def main():
@@ -22,6 +23,10 @@ def main():
     server_address = SocketAddress(server_host, Configuration.PORT)
 
     storage_server = StorageServer(server_address)
+
+    logging.info(f'Registering handlers...')
+
+    PackagesHandler.init_callbacks()
 
     logging.info(f'Server started on {server_address}!')
 
