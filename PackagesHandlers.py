@@ -142,10 +142,10 @@ def handle_transaction_start_response(package: Pckg.Package, _host_socket: socke
 
     transactions_manager = server.get_transactions_manager()
 
-    receiver_addr = transaction_start_response.get_receiver_addr()
-    receiver_host = server.get_hosts_manager().get_host_by_addr(receiver_addr)
-
     if transaction_start_response.is_transaction_started():
+        receiver_addr = transaction_start_response.get_receiver_addr()
+        receiver_host = server.get_hosts_manager().get_host_by_addr(receiver_addr)
+
         transactions_manager.set_transaction_to_started(receiver_addr, True)
 
         transaction_start_response.send(receiver_host.host_socket)
