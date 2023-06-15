@@ -36,4 +36,5 @@ class TransactionFinishedResponse(AbstractPackageCallback):
         host_id = hosts_manager.get_host_id_by_addr(receiver_addr)
         file_id = files_manager.get_file_id_by_name(file_name)
 
-        files_manager.add_file_owner(file_id, host_id)
+        if not files_manager.is_contains_ownership(file_id, host_id):
+            files_manager.add_file_owner(file_id, host_id)

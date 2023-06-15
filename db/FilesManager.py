@@ -69,6 +69,10 @@ class FilesManager:
 
         logging.info(f'File id:{file_id} removed!')
 
+    def is_contains_ownership(self, file_id: int, host_id: int) -> bool:
+        return (self.__sqlite_manager.execute_file('./db/sqls/contains_ownership.sql',
+                                                   (file_id, host_id)).fetchone() == (1,))
+
     def remove_file_owner(self, file_id: int, host_id: int) -> None:
         self.__sqlite_manager.execute_file('./db/sqls/remove_file_owner.sql',
                                            (file_id, host_id))

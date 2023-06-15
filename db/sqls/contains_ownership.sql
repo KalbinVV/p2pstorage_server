@@ -1,0 +1,1 @@
+select exists (select 1 from owners where file_id = ? and host_id = ?)
