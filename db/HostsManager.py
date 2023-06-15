@@ -73,5 +73,14 @@ class HostsManager:
 
         return hosts
 
-    def is_contains_host(self, addr: str) -> bool:
-        pass
+    def increment_rating(self, host_id: int, value: int) -> None:
+        self.__sqlite_manager.execute_file('./db/sqls/increment_rating.sql',
+                                           (value, host_id))
+
+        logging.debug(f'Host id: {host_id} increment rating by {value}!')
+
+    def decrement_rating(self, host_id: int, value: int) -> None:
+        self.__sqlite_manager.execute_file('./db/sqls/decrement_rating.sql',
+                                           (value, host_id))
+
+        logging.debug(f'Host id: {host_id} decrement rating by {value}!')

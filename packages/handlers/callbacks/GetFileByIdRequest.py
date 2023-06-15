@@ -1,10 +1,10 @@
 import socket
 from time import sleep
 
-from p2pstorage_core.server.Host import HostInfo
 from p2pstorage_core.server.Package import Package, PackageType, FileTransactionStartResponsePackage, \
     GetFileByIdRequestPackage, FileTransactionStartRequestPackage
 
+from Configuration import RATING_PENALTY_FOR_MISSING_FILE
 from StorageServer import StorageServer
 from packages.handlers.PackageCallback import AbstractPackageCallback
 
@@ -51,6 +51,10 @@ class GetFileByIdRequest(AbstractPackageCallback):
         transaction_was_started = False
 
         for host_info in files_manager.get_file_owners(file_id):
+            # Host shouldn't download file from yourself
+            if host_info.host_addr.host == host_addr[0]:
+                continue
+
             owner_host = hosts_manager.get_host_by_addr(host_info.host_addr)
             owner_socket = owner_host.host_socket
 
@@ -73,6 +77,8 @@ class GetFileByIdRequest(AbstractPackageCallback):
 
                 files_manager.remove_file_owner(file_id, owner_id)
 
+                hosts_manager.decrement_rating(owner_id, RATING_PENALTY_FOR_MISSING_FILE)
+
         if not transaction_was_started:
             transaction_start_response = FileTransactionStartResponsePackage(None,
                                                                              None,
@@ -82,5 +88,3 @@ class GetFileByIdRequest(AbstractPackageCallback):
             transaction_start_response.send(host)
 
             files_manager.remove_file_by_id(file_id)
-        else:
-            pass  # TODO: Add owner
