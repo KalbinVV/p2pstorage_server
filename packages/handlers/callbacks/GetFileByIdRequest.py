@@ -59,6 +59,8 @@ class GetFileByIdRequest(AbstractPackageCallback):
             transaction_start_request = FileTransactionStartRequestPackage(file_name,
                                                                            establish_addr=peer_name,
                                                                            receiver_addr=host_addr)
+            transaction_start_request.send(owner_socket)
+
             # TODO: Refactor this in future
             # Waiting response from owner host
             sleep(1)
@@ -80,3 +82,5 @@ class GetFileByIdRequest(AbstractPackageCallback):
             transaction_start_response.send(host)
 
             files_manager.remove_file_by_id(file_id)
+        else:
+            pass  # TODO: Add owner

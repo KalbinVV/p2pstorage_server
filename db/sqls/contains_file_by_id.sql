@@ -1,1 +1,1 @@
-select exists (select 1 from files where id=?)
+select exists (select 1 from files where id = ?)
