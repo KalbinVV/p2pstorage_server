@@ -82,3 +82,5 @@ class GetFileByIdRequest(AbstractPackageCallback):
             transaction_start_response.send(host)
 
             files_manager.remove_file_by_id(file_id)
+        else:
+            pass  # TODO: Add owner
