@@ -36,7 +36,7 @@ class StorageServer:
     def init_files_manager(self) -> None:
         self.__files_manager = FilesManager()
 
-        self.__files_manager.init_table()
+        self.__files_manager.init_tables()
 
     def get_hosts_manager(self) -> HostsManager:
         return self.__hosts_manager

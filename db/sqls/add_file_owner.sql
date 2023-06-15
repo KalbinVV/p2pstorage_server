@@ -1,0 +1,1 @@
+insert into owners(file_id, host_id) values(?, ?)

@@ -72,3 +72,6 @@ class HostsManager:
             hosts.append(Host(host_name, self.__sockets_dict[host_id]))
 
         return hosts
+
+    def is_contains_host(self, addr: str) -> bool:
+        pass

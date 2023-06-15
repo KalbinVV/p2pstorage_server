@@ -1,3 +1,4 @@
+import logging
 import socket
 
 from p2pstorage_core.server.Package import Package, PackageType, NewFileRequestPackage, NewFileResponsePackage
@@ -28,9 +29,25 @@ class NewFileRequest(AbstractPackageCallback):
         host_addr = host.getpeername()
         host_id = server.get_hosts_manager().get_host_id_by_addr(host_addr)
 
-        for file_info in files_info:
-            server.get_files_manager().add_file(file_info, host_id)
+        files_manager = server.get_files_manager()
 
-            new_file_response_package = NewFileResponsePackage(file_info.name)
+        for file_info in files_info:
+            if not files_manager.is_contains_file_by_name(file_info.name):
+                files_manager.add_file(file_info)
+
+                response_msg = f'[File not exists before]: {file_info.name}'
+            else:
+                response_msg = f'[File already exists]: {file_info.name}'
+
+            logging.debug(file_info)
+            logging.debug(files_manager.is_contains_file_by_name(file_info.name))
+
+            file_id = files_manager.get_file_id_by_name(file_info.name)
+
+            logging.debug(file_id)
+
+            files_manager.add_file_owner(file_id=file_id, host_id=host_id)
+
+            new_file_response_package = NewFileResponsePackage(response_msg)
 
             new_file_response_package.send(host)
