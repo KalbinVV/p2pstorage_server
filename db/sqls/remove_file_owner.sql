@@ -1,1 +1,1 @@
-delete from files where id = ? and host_id = ?
+delete from owners where file_id = ? and host_id = ?

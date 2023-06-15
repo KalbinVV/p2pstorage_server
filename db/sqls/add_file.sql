@@ -1,1 +1,1 @@
-insert into files(host_id, name, size, hash) values(?, ?, ?, ?)
+insert into files(name, size, hash) values(?, ?, ?)

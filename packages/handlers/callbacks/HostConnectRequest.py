@@ -30,6 +30,15 @@ class HostConnectRequest(AbstractPackageCallback):
         host_addr = host.getpeername()
         host_name = connect_request_package.get_host_name()
 
+        hosts_manager = server.get_hosts_manager()
+
+        if hosts_manager.is_contains_host(host_addr):
+            logging.info(f'Host {host_addr} is already connected! Connecting not allowed.')
+            unsuccessful_connect_response = ConnectionResponsePackage(False,
+                                                                      reject_reason='You already connected!')
+            unsuccessful_connect_response.send(host)
+            return
+
         logging.info(f'Host {host_addr}:{host_name} connected!')
 
         server.get_hosts_manager().add_host(host_addr, Host(host_name, host))

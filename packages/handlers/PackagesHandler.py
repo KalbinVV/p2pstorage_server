@@ -36,6 +36,7 @@ class PackagesHandler:
         from packages.handlers.callbacks.NewFileRequest import NewFileRequest
         from packages.handlers.callbacks.TransactionFinishedResponse import TransactionFinishedResponse
         from packages.handlers.callbacks.TransactionStartResponse import TransactionStartResponse
+        from packages.handlers.callbacks.GetFileOwnersByIdRequest import GetFileOwnersByIdRequest
 
         HostConnectRequest.register()
         HostListRequest.register()
@@ -44,3 +45,4 @@ class PackagesHandler:
         GetFileByIdRequest.register()
         TransactionStartResponse.register()
         TransactionFinishedResponse.register()
+        GetFileOwnersByIdRequest.register()
