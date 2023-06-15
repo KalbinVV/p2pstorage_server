@@ -32,7 +32,7 @@ class HostConnectRequest(AbstractPackageCallback):
 
         hosts_manager = server.get_hosts_manager()
 
-        if hosts_manager.is_contains_host(host_addr):
+        if hosts_manager.is_contains_host_by_addr(host_addr[0]):
             logging.info(f'Host {host_addr} is already connected! Connecting not allowed.')
             unsuccessful_connect_response = ConnectionResponsePackage(False,
                                                                       reject_reason='You already connected!')

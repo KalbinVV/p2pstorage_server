@@ -55,6 +55,7 @@ class HostsManager:
 
         del self.__sockets_dict[host_id]
 
+    # TODO: Deprecated, should be removed or renamed
     def contains_host(self, host_addr: SocketAddress):
         host_id = self.get_host_id_by_addr(host_addr)
 
@@ -84,3 +85,7 @@ class HostsManager:
                                            (value, host_id))
 
         logging.debug(f'Host id: {host_id} decrement rating by {value}!')
+
+    def is_contains_host_by_addr(self, addr: str) -> bool:
+        return (self.__sqlite_manager.execute_file('./db/sqls/contains_host_by_addr.sql',
+                                                   (addr,)).fetchone() == (1,))
