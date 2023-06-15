@@ -1,3 +1,6 @@
 PORT = 5000
 BROADCAST_MESSAGE = 'Welcome to test server!\nRules: ...'
 HOST = None
+
+RATING_PENALTY_FOR_MISSING_FILE = 5
+RATING_BONUS_FOR_FILE = 5

@@ -2,6 +2,7 @@ import socket
 
 from p2pstorage_core.server.Package import Package, PackageType, FileTransactionStartResponsePackage
 
+from Configuration import RATING_BONUS_FOR_FILE
 from StorageServer import StorageServer
 from packages.handlers.PackageCallback import AbstractPackageCallback
 
@@ -32,3 +33,9 @@ class TransactionStartResponse(AbstractPackageCallback):
             transactions_manager.set_transaction_to_started(receiver_addr, True)
 
             transaction_start_response.send(receiver_host.host_socket)
+
+            hosts_manager = server.get_hosts_manager()
+
+            host_id = hosts_manager.get_host_id_by_addr(host.getpeername())
+
+            hosts_manager.increment_rating(host_id, RATING_BONUS_FOR_FILE)
