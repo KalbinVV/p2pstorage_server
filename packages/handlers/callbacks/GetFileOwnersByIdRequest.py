@@ -34,7 +34,8 @@ class GetFileOwnersByIdRequest(AbstractPackageCallback):
             unsuccessful_response.send(host)
             return
 
-        file_owners = files_manager.get_file_owners(file_id)
+        file_owners = [owner for owner in files_manager.get_file_owners(file_id)]  # TODO: Set limit in future
+
         successful_response = FileOwnersResponsePackage(response_approved=True,
                                                         owners=file_owners)
         successful_response.send(host)

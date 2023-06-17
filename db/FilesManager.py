@@ -1,4 +1,5 @@
 import logging
+from typing import Generator
 
 from p2pstorage_core.helper_classes.SocketAddress import SocketAddress
 from p2pstorage_core.server.FileInfo import FileInfo, FileDataBaseInfo
@@ -51,17 +52,12 @@ class FilesManager:
 
         logging.debug(f'Owner {host_id} for {file_id} file added!')
 
-    def get_file_owners(self, file_id: int) -> list[HostInfo]:
-        files_owners: list[HostInfo] = []
-
+    def get_file_owners(self, file_id: int) -> Generator[HostInfo, None, None]:
         for row in self.__sqlite_manager.execute_file('./db/sqls/get_file_owners.sql',
                                                       (file_id,)):
-
             name, addr, port = row
 
-            files_owners.append(HostInfo(name, SocketAddress(addr, port)))
-
-        return files_owners
+            yield HostInfo(name, SocketAddress(addr, port))
 
     def remove_file_by_id(self, file_id: int) -> None:
         self.__sqlite_manager.execute_file('./db/sqls/remove_file_by_id.sql',
