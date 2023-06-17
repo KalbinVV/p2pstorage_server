@@ -30,14 +30,14 @@ class GetFileByIdRequest(AbstractPackageCallback):
 
         file_id = get_file_by_id_request_package.get_file_id()
 
-        if not files_manager.is_contains_file_by_id(file_id):
-            get_file_by_id_response = FileTransactionStartResponsePackage(transaction_started=False,
-                                                                          file_name='',
-                                                                          reject_reason='File not exists!',
-                                                                          sender_addr=None,
-                                                                          receiver_addr=None)
-            get_file_by_id_response.send(host)
+        file_not_exists_response = FileTransactionStartResponsePackage(transaction_started=False,
+                                                                       file_name='',
+                                                                       reject_reason='File not exists!',
+                                                                       sender_addr=None,
+                                                                       receiver_addr=None)
 
+        if not files_manager.is_contains_file_by_id(file_id):
+            file_not_exists_response.send(host)
             return
 
         file_name = files_manager.get_file_by_id(file_id).name
@@ -80,11 +80,6 @@ class GetFileByIdRequest(AbstractPackageCallback):
                 hosts_manager.decrement_rating(owner_id, RATING_PENALTY_FOR_MISSING_FILE)
 
         if not transaction_was_started:
-            transaction_start_response = FileTransactionStartResponsePackage(None,
-                                                                             None,
-                                                                             file_name,
-                                                                             False,
-                                                                             'File not exists!')
-            transaction_start_response.send(host)
+            file_not_exists_response.send(host)
 
             files_manager.remove_file_by_id(file_id)
